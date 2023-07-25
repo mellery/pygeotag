@@ -7,6 +7,8 @@ from PyQt5.QtCore import QAbstractTableModel, Qt, QSize
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableView, QStyledItemDelegate
 
+from get_exif import getGPS
+
 # Create a custom namedtuple class to hold our data.
 preview = namedtuple("preview", "id title image")
 
@@ -85,11 +87,21 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.view)
 
+        untagged = 0
+
         # Add a bunch of images.
-        for n, fn in enumerate(glob.glob("/media/mike/Media/Pictures/Air and Space/*.jpg")):
+        for n, fn in enumerate(glob.glob("/media/mike/Media/Pictures/*/*.jpg")):
             image = QImage(fn)
-            item = preview(n, fn, image)
-            self.model.previews.append(item)
+            coords = getGPS(fn)
+            if coords == {}:
+                print(fn,coords)
+                untagged = untagged + 1
+                item = preview(n, fn, image)
+                self.model.previews.append(item)
+            if untagged > 100:
+                break
+
+        print(untagged)
         self.model.layoutChanged.emit()
 
         self.view.resizeRowsToContents()
